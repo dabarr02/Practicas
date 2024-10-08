@@ -38,7 +38,7 @@ char *loadstr(FILE *file,int *contar)
 	}
 	char *str ;
 	if(*contar>0){
-		str = (char*) malloc(*contar * sizeof(int));
+		str = (char*) malloc(*contar * sizeof(char));
 		fseek(file,-*contar,SEEK_CUR);
 		fread(str,sizeof(char),*contar,file);
 	}else{
