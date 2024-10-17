@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
 		for (int i = 2; i < argc; i++) {
 			printf("Argumento %d: %s se ha escrito correctamente\n", i, argv[i]);
 			str = argv[i];
-			fprintf(file,"%s\n",str);
+			fwrite(str,sizeof(char),strlen(str)+1,file);
 		}
 		
 	}else{

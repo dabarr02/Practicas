@@ -22,29 +22,37 @@
 
 char * progname;
 
-char *loadstr(FILE *file,int *contar)
-{
-	/* To be completed */
-	int c;
-	bool salto=false;
-	*contar=0;
-	
-	while ((fread(&c,sizeof(char),1,file)) != 0&&!salto) {
-		/* Print byte to stdout */
-		if(c=='\0'){
-			salto=true;
-		}
-		*contar=*contar+1;
-	}
-	char *str ;
-	if(*contar>0){
-		str = (char*) malloc(*contar * sizeof(char));
-		fseek(file,-*contar,SEEK_CUR);
-		fread(str,sizeof(char),*contar,file);
-	}else{
-		return NULL;
-	}
-	return str;	
+char *loadstr(FILE *file, int *contar) {
+    char c;
+    *contar = 0;
+
+    // Contar la longitud de la cadena hasta el carácter nulo
+    while (fread(&c, sizeof(char), 1, file) == 1) {
+        if (c == '\0') {
+            break; // Se encontró el carácter nulo
+        }
+        (*contar)++;
+    }
+
+    // Si no hay caracteres leídos, retornar NULL
+    if (*contar == 0) {
+        return NULL;
+    }
+
+    // Asignar memoria para la cadena +1 para el carácter nulo
+    char *str = (char *)malloc((*contar + 1) * sizeof(char));
+    if (str == NULL) {
+        perror("Error al asignar memoria");
+        return NULL; // Manejo de error de asignación
+    }
+
+    // Regresar al inicio de la cadena leída
+    fseek(file, -(*contar + 1), SEEK_CUR); // Mover el puntero para leer la cadena
+    fread(str, sizeof(char), *contar, file); // Leer la cadena
+	fseek(file, 1, SEEK_CUR);
+    str[*contar] = '\0'; // Añadir carácter nulo al final
+
+    return str;	
 }
 
 
@@ -71,11 +79,12 @@ int main(int argc, char *argv[])
 	}
 	int * contar =(int*)malloc(sizeof(int));
 	char* str = loadstr(file,contar);
-	
+	char n='\n';
 	while(str!=NULL){
 		int ret=0;
-		//ret=fwrite(str,sizeof(char),*contar,stdout);
-		write(1, str, *contar * sizeof(char));
+		ret=fwrite(str,sizeof(char),*contar + 1,stdout);
+		fwrite(&n,sizeof(char),1,stdout);
+		//write(1, str, (*contar+1) * sizeof(char));
 		if (ret==EOF){
 			fclose(file);
 			err(3,"fwrite) failed!!");
