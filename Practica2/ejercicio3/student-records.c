@@ -20,7 +20,7 @@ static inline char* clone_string(char* original)
 }
 
 
-student_t* parse_student(FILE* file,struct options* options,int* nr_entries){
+student_t* parse_student_text(FILE* file,struct options* options,int* nr_entries){
 	char line[MAX_PASSWD_LINE+1];
 	char* token;
 	char* lineptr;
@@ -31,7 +31,7 @@ student_t* parse_student(FILE* file,struct options* options,int* nr_entries){
 	int entry_count;
 	int cur_line;
 	
-	char ch [5];
+	char ch [MAX_PASSWD_LINE];
 	//leemos el numero de entradas
 	fgets(ch,sizeof(int), file);
 	sscanf(ch,"%d",&entry_count);
@@ -45,7 +45,7 @@ student_t* parse_student(FILE* file,struct options* options,int* nr_entries){
 	entry_idx=0;
 	cur_line=1;
 	
-	// esto no es un while es un for con entrycount?
+	
 
 	while (fgets(line, MAX_PASSWD_LINE + 1, file) != NULL){
 		lineptr=line;
@@ -94,7 +94,7 @@ int print_text_file(char *path,struct options* options)/* To be completed (part 
 		return 0;
 		
 	}
-	student_t* estudiante = parse_student(file,options,&nr_entries);
+	student_t* estudiante = parse_student_text(file,options,&nr_entries);
 	if (!estudiante)
 		return EXIT_FAILURE;
 
