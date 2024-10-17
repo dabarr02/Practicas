@@ -30,7 +30,8 @@ typedef enum {
 	NONE_ACT,
 	PRINT_TEXT_ACT,
 	PRINT_BINARY_ACT,
-	WRITE_BINARY_ACT
+	WRITE_BINARY_ACT,
+	ANADIR,
 } action_t;
 
 /**
@@ -40,6 +41,7 @@ typedef enum {
 struct options {
 	char* input_file;
 	char* output_file;
+	char** registros;
 	action_t action;
 };
 

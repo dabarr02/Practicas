@@ -257,7 +257,90 @@ int write_binary_file(char *input_file, char *output_file)
 	fclose(binario);
 	return 0;
 }
+student_t parse_student(char* regis){
+	student_t ret;
+	token_id_t token_id=0;
+	char* token;
+	while((token = strsep(&regis, ":"))!=NULL) //
+		{
+			switch (token_id){
+				case STUDENT_ID_IDX:
+					sscanf(token,"%d",&ret.student_id);
+				break;
+				case NIF_IDX:
+					strcpy(ret.NIF,token);
+				break;
+				case FIRST_NAME_IDX:
+					
+				ret.first_name=strdup(token);
+				break;
+				case LAST_NAME_IDX:
+					ret.last_name=strdup(token);
+				break;
+				default:
+				break;
+			} 
+			token_id++;
+		}
+		if (token_id!=NR_FIELDS_STUDENT) {
+			fprintf(stderr, "Could not process all tokens from line\n");
+			exit(EXIT_FAILURE);
 
+		}
+	return ret;
+
+}
+int anadir_bin(char *input_file,char** registros){
+	int cont=0;
+	FILE* file;
+	student_t estudiante;
+	file=fopen(input_file,"r+");
+	fseek(file, 0, SEEK_END);
+	//bucle para escribir al final
+	while(registros[cont]!=NULL){
+		estudiante=parse_student(registros[cont]);
+		cont++;
+		//escribimos el id
+		fwrite(&estudiante.student_id,sizeof(int),1,file);
+		//NIF
+		fwrite(estudiante.NIF,sizeof(char),strlen(estudiante.NIF)+1,file);
+		//Nombre
+		fwrite(estudiante.first_name,sizeof(char),strlen(estudiante.first_name)+1,file);
+		//Apellidos
+		fwrite(estudiante.last_name,sizeof(char),strlen(estudiante.last_name)+1,file);
+	}
+	//tenemos que actualizar el primer entero
+	fseek(file, 0, SEEK_SET);
+	int c;
+	fread(&c, sizeof(int), 1, file);//leemos c
+	c=c+cont;
+	fseek(file, 0, SEEK_SET);
+	fwrite(&c, sizeof(int), 1, file);//escribimos c+cont
+	fclose(file);
+	return 0;
+}
+int anadir_txt(char *input_file,char** registros){
+	int cont=0;
+	FILE* file;
+	student_t estudiante;
+	file=fopen(input_file,"r+");
+	//bucle para escribir al final
+	fseek(file, 0, SEEK_END);
+	while(registros[cont]!=NULL){
+		estudiante=parse_student(registros[cont]);
+		fprintf(file,"\n%d:%s:%s:%s",estudiante.student_id,estudiante.NIF,estudiante.first_name,estudiante.last_name);
+		cont++;
+	}
+	//tenemos que actualizar el primer entero
+	fseek(file, 0, SEEK_SET);
+	int c;
+	fscanf(file, "%d", &c);//leemos c
+	c=c+cont;
+	fseek(file, 0, SEEK_SET);
+	fprintf(file, "%d", c);//escribimos c modificado
+	fclose(file);
+	return 0;
+}
 int main(int argc, char *argv[])
 {
 	int ret_code, opt;
@@ -270,7 +353,7 @@ int main(int argc, char *argv[])
 	ret_code = 0;
 
 	/* Parse command-line options (incomplete code!) */
-	while ((opt = getopt(argc, argv, "hi:po:b")) != -1)
+	while ((opt = getopt(argc, argv, "hi:po:ba")) != -1)
 	{
 		switch (opt)
 		{
@@ -290,6 +373,10 @@ int main(int argc, char *argv[])
 		case 'b':
 			options.action=PRINT_BINARY_ACT;
 			break;
+		case 'a':
+			options.action=ANADIR;
+			break;
+
 		/**
 		 **  To be completed ...
 		 **/
@@ -323,6 +410,18 @@ int main(int argc, char *argv[])
 	case PRINT_BINARY_ACT:
 		/* Part C */
 		ret_code = print_binary_file(options.input_file);
+		break;
+	case ANADIR:
+		int tam= strlen(options.input_file);
+		if(options.input_file[tam-1]=='t'){
+			//añadimos al txt
+			options.registros=&argv[optind]; //guardamos los registros a escribir
+			ret_code=anadir_txt(options.input_file,options.registros);
+		}else{
+			//añadimos al bin
+			options.registros=&argv[optind];//guardamos los registros a escribir 
+			ret_code=anadir_bin(options.input_file,options.registros);
+		}
 		break;
 	default:
 		break;
