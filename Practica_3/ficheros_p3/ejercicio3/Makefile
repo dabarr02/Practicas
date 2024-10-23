@@ -3,6 +3,7 @@ TARGETS = $(SRC:%.c=%)
 
 CC = gcc
 CFLAGS = -g
+HEADERS = defs.h
 LDFLAGS =
 LIBS =
 
