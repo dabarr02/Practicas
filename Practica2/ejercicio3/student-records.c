@@ -131,7 +131,14 @@ student_t* read_student_text_file(FILE* file,int* nr_entries){
 				cur_entry->first_name=strdup(token);
 				break;
 				case LAST_NAME_IDX:
-					cur_entry->last_name=strdup(token);
+					int len= strlen(token);
+					if(token[len-1]=='\n'){	
+						cur_entry->last_name=malloc(sizeof(char)*(len));
+						strncpy(cur_entry->last_name,token,len-1);
+						cur_entry->last_name[len-1]='\0';
+					}else{
+						cur_entry->first_name=strdup(token);
+					}
 				break;
 				default:
 				break;
@@ -166,7 +173,7 @@ int print_text_file(char *path)/* To be completed (part A) */
 	for(int i=0;i<nr_entries;i++){
 		student_t* e=&estudiante[i];
 		fprintf(stdout,"[Entry #%d]\n",i);
-		fprintf(stdout,"\tstudent_id= %d\n\tNIF=%s\n\tfirst_name= %s\n\tlast_name= %s\n",e->student_id,e->NIF,e->first_name,e->last_name);
+		fprintf(stdout,"\tstudent_id=%d\n\tNIF=%s\n\tfirst_name=%s\n\tlast_name=%s\n",e->student_id,e->NIF,e->first_name,e->last_name);
 	}
 
 	return 0;
@@ -190,7 +197,7 @@ int print_binary_file(char *path)
 	for(int i=0;i<nr_entries;i++){
 		student_t* e=&estudiante[i];
 		fprintf(stdout,"[Entry #%d]\n",i);
-		fprintf(stdout,"\tstudent_id= %d\n\tNIF=%s\n\tfirst_name= %s\n\tlast_name= %s\n",e->student_id,e->NIF,e->first_name,e->last_name);
+		fprintf(stdout,"\tstudent_id=%d\n\tNIF=%s\n\tfirst_name=%s\n\tlast_name=%s\n",e->student_id,e->NIF,e->first_name,e->last_name);
 	}
 
 
