@@ -9,15 +9,24 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+typedef struct {
+	pid_t pid;
+    int command_number;
+}proceso;
 
-
-pid_t launch_command(char** argv){
+pid_t launch_command(char** argv,int c){
     /* To be completed */
     pid_t PID= fork();
-    int j;
     if(PID==0){
-        j = execvp(argv[0],argv);
+        printf("@@ Running command #%d: %s %s\n",c,argv[0],argv[1]);
+        if( execvp(argv[0],argv)==-1){
+            perror("execv");
+            exit(EXIT_FAILURE);
+        }
         exit(1); 
+    }else if(PID<0){
+        perror("fork");
+        exit(EXIT_FAILURE);
     }
    return PID;
    
@@ -82,18 +91,67 @@ pid_t launch_command(char** argv){
 void ejecuta_fichero(char* file){
     FILE* f;
     f = fopen(file,"r");
+    if (!f) {
+        perror("fopen");
+        return; 
+    }
     char comando[256];
     char **cmd_argv;
     pid_t pidcmd;
     int cmd_argc;
+    int c=0;
     while(fgets(comando,256,f)!=NULL){
         cmd_argv=parse_command(comando,&cmd_argc);
-        pidcmd = launch_command(cmd_argv);
+        pidcmd = launch_command(cmd_argv,c);
         waitpid(pidcmd,NULL,0);
         printf("PID Hijo: %d\n",pidcmd);
-        
+        c++;
     }
     fclose(f);
+    for (int i = 0; cmd_argv[i] != NULL; i++) {  
+        free(cmd_argv[i]);  // Free individual argument
+    }
+
+    free(cmd_argv); 
+    return;
+}
+void ejecuta_fichero_b(char* file){
+    FILE* f;
+    f = fopen(file,"r");
+    if (!f) {
+        perror("fopen");
+        return;
+    }
+
+    char comando[256];
+    char **cmd_argv;
+    pid_t pidcmd;
+    int cmd_argc;
+    int c=0;
+    proceso procesos[256];
+    while(fgets(comando,256,f)!=NULL){
+        cmd_argv=parse_command(comando,&cmd_argc);
+        pidcmd = launch_command(cmd_argv,c);
+        procesos[c].pid=pidcmd;
+        procesos[c].command_number=c;
+        c++;
+    }
+    fclose(f);
+    int proc=c;
+    int status;
+    while (c > 0) {
+        pidcmd = wait(&status);
+        if (pidcmd > 0) {
+             for (int i = 0; i < proc; i++) {
+                if (procesos[i].pid == pidcmd) {
+                    printf("@@ Command #%d terminated (pid: %d, status: %d)\n", procesos[i].command_number, pidcmd, WEXITSTATUS(status));
+                    break;
+                }
+            }
+            c--;
+        }
+    }
+
     for (int i = 0; cmd_argv[i] != NULL; i++) {  
         free(cmd_argv[i]);  // Free individual argument
     }
@@ -112,7 +170,7 @@ int main(int argc, char *argv[]) {
 	struct options options;
     options.action=NONE_ACT;
   
-    while ((opt = getopt(argc, argv, "x:s:")) != -1)
+    while ((opt = getopt(argc, argv, "x:s:b")) != -1)
 	{
 		switch (opt)
 		{
@@ -123,8 +181,13 @@ int main(int argc, char *argv[]) {
 			break;
 		case 's':
 			options.input_file= optarg;
-            options.action=FILE_X_ACT;
+            if(options.action==NONE_ACT){
+                options.action=FILE_X_ACT;
+            }
 			break;
+        case 'b':
+            options.action=FILE_BS_ACT;
+            break;
 		default:
 			exit(EXIT_FAILURE);
 		}
@@ -133,16 +196,18 @@ int main(int argc, char *argv[]) {
     {
         case X_CMD_ACT:
         cmd_argv=parse_command(options.cmds,&cmd_argc);
-        pidcmd = launch_command(cmd_argv);
+        pidcmd = launch_command(cmd_argv,0);
         printf("PID hijo: %d\n",pidcmd);
         for (i = 0; cmd_argv[i] != NULL; i++) {  
         free(cmd_argv[i]);  // Free individual argument
         }
-
         free(cmd_argv); 
         break;
         case FILE_X_ACT:
             ejecuta_fichero(options.input_file);
+        break;
+        case FILE_BS_ACT:
+            ejecuta_fichero_b(options.input_file);
         break;
         case NONE_ACT:
         fprintf(stderr, "Must indicate one of the following options: -x, -s, -b \n");

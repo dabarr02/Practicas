@@ -30,6 +30,7 @@ typedef enum {
 	NONE_ACT,
 	X_CMD_ACT,
 	FILE_X_ACT,
+	FILE_BS_ACT,
 } action_t;
 
 /**
@@ -41,5 +42,6 @@ struct options {
     char* cmds;
 	action_t action;
 };
+
 
 #endif
