@@ -4,7 +4,7 @@
 #include <pthread.h>   // Librería para manejar hilos POSIX
 
 // Definición de la capacidad máxima de la discoteca
-#define CAPACITY 5
+#define CAPACITY 1
 
 // Macro para convertir el estado VIP a cadena de texto
 #define VIPSTR(vip) ((vip) ? "  vip  " : "not vip")
@@ -22,9 +22,9 @@ pthread_cond_t normal_cond;     // Variable de condición para normales
 int aforo = 0;                  // Ocupación actual de la discoteca
 
 // Contadores para mantener el orden de llegada y turno de entrada
-int vip_arrived = 0;            // Total de VIPs que han llegado
+int vip_dispensador = 0;            // Siguiente turno que se va a asignar vip
 int vip_next = 0;               // Siguiente VIP que puede entrar
-int normal_arrived = 0;         // Total de normales que han llegado
+int normal_dispensador = 0;         // Siguiente turno que se va a asignar normal
 int normal_next = 0;            // Siguiente normal que puede entrar
 
 // Función para que los clientes VIP entren a la discoteca
@@ -32,8 +32,8 @@ void enter_vip_client(int id)
 {
     pthread_mutex_lock(&cerrojo);  // Adquirir el mutex para entrar en sección crítica
 
-    int my_turn = vip_arrived++;   // Asignar el turno al cliente VIP
-
+    int my_turn = vip_dispensador;   // Asignar el turno al cliente VIP
+	vip_dispensador++;
     // Esperar hasta que sea su turno y haya espacio en la discoteca
     while (aforo >= CAPACITY || vip_next != my_turn) {
         pthread_cond_wait(&vip_cond, &cerrojo);
@@ -43,7 +43,9 @@ void enter_vip_client(int id)
     printf("Cliente %2d (%s) entra a la discoteca\n", id, VIPSTR(1));
 
     vip_next++; // Incrementar el siguiente VIP que puede entrar
-
+	if(vip_next<vip_dispensador){
+      pthread_cond_broadcast(&vip_cond);
+	} 
     pthread_mutex_unlock(&cerrojo); // Liberar el mutex
 }
 
@@ -52,10 +54,10 @@ void enter_normal_client(int id)
 {
     pthread_mutex_lock(&cerrojo);  // Adquirir el mutex para entrar en sección crítica
 
-    int my_turn = normal_arrived++;  // Asignar el turno al cliente normal
-
+    int my_turn = normal_dispensador;  // Asignar el turno al cliente normal
+	normal_dispensador++;
     // Esperar hasta que sea su turno, no haya VIPs esperando y haya espacio
-    while (aforo >= CAPACITY || vip_next < vip_arrived || normal_next != my_turn) {
+    while (aforo >= CAPACITY || vip_next < vip_dispensador || normal_next != my_turn) {
         pthread_cond_wait(&normal_cond, &cerrojo);
     }
 
@@ -63,7 +65,9 @@ void enter_normal_client(int id)
     printf("Cliente %2d (%s) entra a la discoteca\n", id, VIPSTR(0));
 
     normal_next++; // Incrementar el siguiente normal que puede entrar
-
+	if (normal_next < normal_dispensador) {
+        pthread_cond_broadcast(&normal_cond); // Despertar a los normales
+    }
     pthread_mutex_unlock(&cerrojo); // Liberar el mutex
 }
 
@@ -83,9 +87,9 @@ void disco_exit(int id, int isvip)
     printf("Cliente %2d (%s) sale de la discoteca\n", id, VIPSTR(isvip));
 
     // Despertar al siguiente cliente que pueda entrar
-    if (vip_next < vip_arrived) {
+    if (vip_next < vip_dispensador) {
         pthread_cond_broadcast(&vip_cond);   // Despertar a los VIPs
-    } else if (normal_next < normal_arrived) {
+    } else if (normal_next < normal_dispensador) {
         pthread_cond_broadcast(&normal_cond); // Despertar a los normales
     }
 

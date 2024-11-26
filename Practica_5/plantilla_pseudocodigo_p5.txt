@@ -1,0 +1,69 @@
+
+// Contadores para mantener el orden de llegada y turno de entrada
+int vip_arrived = 0;            // Total de VIPs que han llegado
+int vip_next = 0;               // Siguiente VIP que puede entrar
+int normal_arrived = 0;         // Total de normales que han llegado
+int normal_next = 0;            // Siguiente normal que puede entrar
+
+
+/* Completar con variables/recursos necesarios */
+mutex m;
+vip_cond;
+normal_cond;
+int aforo; //lleva la cuenta del aforo acutal (tiene que ser menor que la capacidad)
+#define CAPACIDAD 5
+
+void enter_vip_client()
+{	
+   lock(m) //adquirimos cerrojo
+   int my_turn=vip_arrived++; //somos el siguiente del ultimo que ha llegado
+
+   //bucle de condicion:
+   //Si esta lleno o no es mi turno, no salgo de la espera
+   while(aforo>=CAPACIDAD || vip_next!=my_turn){
+      cond_wait(vip_cond,m);
+   }
+   //salimos de espera
+   aforo++ //hay 1 mas en la sala
+   vip_next++ //el siguiente se pone primero en la cola de espera
+   if(vip_next<vip_arrived){
+      cond_broadcast(vip_cond)
+   //salimos de zona critica
+   unlock(m);
+}
+
+void enter_normal_client(){	
+   /* Completar */
+   lock(m) //adquirimos cerrojo
+   int my_turn=normal_arrived++; //somos el siguiente del ultimo que ha llegado
+
+   //bucle de condicion:
+   //Si esta lleno, no es mi turno o hay vips esperando, no salgo de espera
+   while(aforo>=CAPACIDAD || normal_next!=my_turn||vip_next<vip_arrived){
+      cond_wait(vip_cond,m);
+   }
+   //salimos de espera
+   aforo++ //hay 1 mas en la sala
+   normal_next++ //el siguiente se pone primero en la cola de espera
+
+   if(normal_next<normal_arrived){
+      cond_broadcast(normal_cond)
+   }
+   //salimos de zona critica
+   unlock(m);
+
+}
+
+void exit_client(){	
+   /* Completar */
+   lock(m)
+   aforo--
+   if(vip_next<vip_arrived){
+      cond_broadcast(vip_cond)
+   }else if(normal_next<normal_arrived){
+      cond_broadcast(normal_cond)
+   }
+   unlock(m)
+}
+
+
