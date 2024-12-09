@@ -3,6 +3,7 @@ BIN = $(SRC:%.c=%)
 OBJ = $(SRC:%.c=%.o)
 CC = gcc
 CFLAGS = -g -pthread -O0
+HEADERS = defs.h
 LDFLAGS = -g -pthread
 LIBS = -lrt
 
