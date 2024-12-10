@@ -13,9 +13,10 @@ sem_t *sem_cocinero; //semaforo
 sem_t *sem_salvajes; //semaforo
 
 int getServingsFromPot(void)
-{
+{   
+    printf("[Salvaje] Voy a comer, comida actual: %d\n",ptr->nr_servings);
 	ptr->nr_servings--;
-    printf("[Salvaje] Comida consumida: %d\n",ptr->nr_servings);
+    printf("[Salvaje] Comida consumida,quedan : %d\n",ptr->nr_servings);
 
 }
 
@@ -28,26 +29,26 @@ void eat(void)
 
 void savages(void)
 {
-	for (int i = 0; i < NUMITER; i++){
-		sem_wait(sem_salvajes);
-        if(ptr->nr_servings==0){
-            printf("Avisando Cocinero\n");
+	for (int i = 0; i < NUMITER; i++) {
+        sem_wait(sem_salvajes);
+        if (ptr->nr_servings == 0) {
+            printf("[Salvaje] Avisando Cocinero\n");
             sem_post(sem_cocinero);
-            sem_wait(sem_salvajes);            
+            sem_wait(sem_salvajes);
         }
-		getServingsFromPot();
+        getServingsFromPot();
         printf("[Salvaje] Despertar salvajes\n");
         sem_post(sem_salvajes);
-		eat();
-	}
+        eat();
+    }
 }
 
 int main(int argc, char *argv[])
 {
-	const char *name= "cocina"; //nombre de la memoria compartida
+	const char *name= "/cocina"; //nombre de la memoria compartida
 	const size_t size= sizeof(share_cocina); //tamaño que tiene
-	const char *sem_name_cook = "sem_cocinero"; // nombre del semáforo
-    const char *sem_name_savg = "sem_salvajes";
+	const char *sem_name_cook = "/sem_cocinero"; // nombre del semáforo
+    const char *sem_name_savg = "/sem_salvajes";
 
 
     // Abrir el objeto de memoria compartida

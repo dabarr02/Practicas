@@ -16,16 +16,17 @@ COCINERO_PID=$!
 # Esperar un momento para asegurarse de que el cocinero haya creado la memoria compartida
 sleep 2
 
-# Ejecutar N salvajes (clientes) secuencialmente
+# Ejecutar N salvajes (clientes) concurrentemente
 for ((i=1; i<=N; i++))
 do
     echo "Ejecutando salvaje $i..."
     ./salvajes &
 done
 
-sleep 5
+# Esperar a que todos los salvajes terminen
+wait
+
 # Finalizar el cocinero
 kill $COCINERO_PID
 
 echo "Todos los salvajes han terminado."
-

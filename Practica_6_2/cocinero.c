@@ -10,7 +10,7 @@
 #include <sys/mman.h>
 #include "defs.h"
 #include <semaphore.h>
-#define M 10
+#define M 5
 
 int finish = 0;
 share_cocina *ptr; //memoria compartida
@@ -21,9 +21,8 @@ sem_t *sem_salvajes; //semaforo
 void putServingsInPot(int servings)
 {
 	
-	
 	ptr->nr_servings+=servings; //recargamos los servings
-	printf("Comida servida\n");
+	printf("[Cocinero] Comida servida\n");
     printf("[Cocinero] Comida actual: %d\n",ptr->nr_servings);
     return;
 }
@@ -31,18 +30,21 @@ void putServingsInPot(int servings)
 void cook(void)
 {
 	while(!finish) {
-		sem_wait(sem_cocinero);
-        printf("Cocinero despierto\n");
-		putServingsInPot(M);
-        printf("[Cocinero] Despertando salvajes\n");
-        sem_post(sem_salvajes);
+		sem_wait(sem_cocinero); // esperar a que los salvajes notifiquen
+        if (!finish) {
+            printf("[Cocinero] Cocinero despierto\n");
+            putServingsInPot(M);
+            printf("[Cocinero] Despertando salvajes\n");
+            sem_post(sem_salvajes); // liberar a los salvajes
+        }
     }
     return;
 }
 void handler(int signo)
 {
 	
-	finish = 1;
+	 finish = 1;
+    sem_post(sem_cocinero); // liberar al cocinero si está esperando
 
 }
 
@@ -67,10 +69,15 @@ int main(int argc, char *argv[])
 	//-----------Fin Gestion de señales----------
 
 	//----Creación de recursos compartidos-------
-	const char *name= "cocina"; //nombre de la memoria compartida
+	const char *name= "/cocina"; //nombre de la memoria compartida
 	const size_t size= sizeof(share_cocina); //tamaño que le vamos a dar
-	const char *sem_name_cook = "sem_cocinero"; // nombre del semáforo
-    const char *sem_name_savg = "sem_salvajes";
+	const char *sem_name_cook = "/sem_cocinero"; // nombre del semáforo
+    const char *sem_name_savg = "/sem_salvajes";
+
+    // Eliminar semáforos y memoria compartida existentes para evitar conflictos de ejecuciones anteriores.
+    sem_unlink(sem_name_cook);  // Eliminamos cualquier semáforo cocinero anterior.
+    sem_unlink(sem_name_savg);  // Eliminamos cualquier semáforo de los salvajes anterior.
+    shm_unlink(name);  // Eliminamos cualquier memoria compartida anterior.
 
 	int shm_fd = shm_open(name,O_CREAT | O_RDWR, 0666); //creamos la memoria compartida con nombre name, creat para crear, rdwr para leer y escribir, 0666 permisos
 	if (shm_fd == -1) { //si falla mandar error
@@ -92,13 +99,13 @@ int main(int argc, char *argv[])
     }
 	
 	// Crear el semáforo cocinero
-    sem_cocinero = sem_open(sem_name_cook, O_CREAT, 0700,0);
+    sem_cocinero = sem_open(sem_name_cook, O_CREAT, 0644,0);
     if (sem_cocinero == SEM_FAILED) {
         perror("sem_open");
         exit(EXIT_FAILURE);
     }
 
-    sem_salvajes = sem_open(sem_name_savg, O_CREAT, 0700, 0);// crear semaforo salvajes
+    sem_salvajes = sem_open(sem_name_savg, O_CREAT, 0644, 1);// crear semaforo salvajes
     if (sem_salvajes == SEM_FAILED) {
         perror("sem_open");
         exit(EXIT_FAILURE);
@@ -106,14 +113,10 @@ int main(int argc, char *argv[])
 
 	ptr->cook_wait=0;
 	ptr->nr_servings=0;
-	ptr->sav_wait=1;
+	ptr->sav_wait=0;
 	
 	cook();
-	 // Desmapear la memoria compartida
-    if (munmap(ptr, size) == -1) {
-        perror("munmap");
-        exit(EXIT_FAILURE);
-    }
+	
 
     // Cerrar el descriptor de archivo
     if (close(shm_fd) == -1) {
@@ -124,6 +127,34 @@ int main(int argc, char *argv[])
     // Eliminar el objeto de memoria compartida
     if (shm_unlink(name) == -1) {
         perror("shm_unlink");
+        exit(EXIT_FAILURE);
+    }
+    //Cerramos y desvinculamos cerrojos
+    // Cerrar los semáforos
+    if (sem_close(sem_cocinero) == -1) {
+        perror("sem_close sem_cocinero");
+        exit(EXIT_FAILURE);
+    }
+
+    if (sem_close(sem_salvajes) == -1) {
+        perror("sem_close sem_salvajes");
+        exit(EXIT_FAILURE);
+    }
+
+    // Eliminar los semáforos
+    if (sem_unlink(sem_name_cook) == -1) {
+        perror("sem_unlink sem_cocinero");
+        exit(EXIT_FAILURE);
+    }
+
+    if (sem_unlink(sem_name_savg) == -1) {
+        perror("sem_unlink sem_salvajes");
+        exit(EXIT_FAILURE);
+    }
+    
+     // Desmapear la memoria compartida
+    if (munmap(ptr, size) == -1) {
+        perror("munmap");
         exit(EXIT_FAILURE);
     }
 
