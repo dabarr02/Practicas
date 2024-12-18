@@ -9,6 +9,7 @@
            S_ISBLK      block device
            S_IsDIR      directory
 */
+//-------Fragmento identico a ejercicio 1-------------------
 #define BUFSIZE 512
 void copy(int fdo, int fdd)
 {
@@ -43,36 +44,37 @@ void copy_regular(char *orig, char *dest)
 	
 	copy(fdo,fdd);
 }
-
+//-----------------------------------------------------------
+//-----------Funcion para copiar enlaces simbólicos------------
 void copy_link(char *orig, char *dest)
 {
-	printf("estoy en copylink\n");
+
 	struct stat info;
 	int n;
 	n = lstat(orig,&info);
-	int tam = info.st_size+1;
-	char* ruta;
+	int tam = info.st_size+1; //nos da el tamaño del link
+	char* ruta;//donde vamos a guarda el link
 	ruta=malloc(sizeof(char)*tam);//memoria reservada
-	n=readlink(orig,ruta,tam);
-	ruta[tam-1]='\0';
-	n=symlink(ruta,dest);
-	if(n<0)
-		exit(1);
-	exit(0);
+	n=readlink(orig,ruta,tam);//leemos la ruta que apunta el enlace symbolico
+	ruta[tam-1]='\0';//añadimos el \0
+	n=symlink(ruta,dest);//creamos el enlace simbolico
+	if(n<0)//si fall,salimos con error
+		exit(EXIT_FAILURE);
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])
 {
-	struct stat info;
+	struct stat info; //estructura que rellena la funcino lstat con la info del fichero
 	int n;
-	n = lstat(argv[1],&info);
-	if (S_ISREG(info.st_mode)){//regular
+	n = lstat(argv[1],&info); //obtenemos info
+	if (S_ISREG(info.st_mode)){//Comprobamos si es regular
 		copy_regular(argv[1],argv[2]);
-	}else if(S_ISLNK(info.st_mode)){//enlace sim
+	}else if(S_ISLNK(info.st_mode)){//Comprobamos si es enlace simbolico
 		copy_link(argv[1],argv[2]);
 	}else{
-		printf("Tipo de archivo no soportado");
-		exit(1);
+		printf("Tipo de archivo no soportado\n");
+		exit(EXIT_FAILURE);
 	}
 	return 0;
 }
