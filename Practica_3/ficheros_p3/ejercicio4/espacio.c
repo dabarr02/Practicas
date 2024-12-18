@@ -47,7 +47,7 @@ int get_size_dir(char *dname, size_t *blocks)
 		exit(EXIT_FAILURE);
 	}
 	while((info_dir=readdir(directorio))!=NULL){// leemos directorio mientras la entrada sea distinta de NULL
-		if(strcmp(info_dir->d_name, ".") == 0 || strcmp(info_dir->d_name, "..") == 0){ //evitamo recursion infinita
+		if(strcmp(info_dir->d_name, ".") == 0 || strcmp(info_dir->d_name, "..") == 0){ //evitamo recursion infinita, no podemos meternos en los directorios padre (..) o propio (.)
 			continue;
 		}
 		if(info_dir->d_type == DT_DIR){ //Si la entrada en Dir hacemo recursion
