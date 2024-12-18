@@ -21,10 +21,9 @@ int main(int argc, char* argv[]) {
 	while ((fread(&c,sizeof(char),1,file)) != 0) {
 		/* Print byte to stdout */
 		ret=fwrite(&c,sizeof(char),1,stdout);
-
 		if (ret==EOF){
 			fclose(file);
-			err(3,"fwrite) failed!!");
+			err(3,"fwrite failed!!");
 		}
 	}
 

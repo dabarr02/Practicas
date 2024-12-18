@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <err.h>
 
+			/*Acabado*/
 int main(int argc, char* argv[]) {
 	FILE* file=NULL;
 	int c,ret;
@@ -23,7 +24,7 @@ int main(int argc, char* argv[]) {
 
 		if (ret==EOF){
 			fclose(file);
-			err(3,"putc() failed!!");
+			err(3,"fwrite) failed!!");
 		}
 	}
 
