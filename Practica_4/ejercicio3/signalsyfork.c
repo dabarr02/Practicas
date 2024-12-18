@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 		int status;
 		pid_t pid;
 		//seguimos haciendo wait hasta que muera el hijo, ya que la SIGNAL detiene el wait y retorna -1 
-		//con un errno= EINTR (error por interrupcion)
+		//con un errno= EINTR (error por interrupcion) y tenemos que seguir hasta que el hijo termine
         while ((pid = wait(&status)) == -1 && errno == EINTR) { 
             continue;
         }
