@@ -2,7 +2,7 @@
 #define DEFS_H
 
 #define MAX_CHARS_NIF  9
-#define MAX_PASSWD_LINE  255
+#define MAX_CMD_LINE  255
 
 typedef struct {
 	int student_id; 
@@ -42,6 +42,10 @@ struct options {
     char* cmds;
 	action_t action;
 };
-
+//Estructurta para almacenar la info de los procesos para el apartado oopcional
+struct proceso {
+	pid_t pid;
+    int command_number;
+};
 
 #endif
