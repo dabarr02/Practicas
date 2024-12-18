@@ -18,12 +18,17 @@ pid_t launch_command(char** argv,int c){
     /* To be completed */
     pid_t PID= fork();
     if(PID==0){
-        printf("@@ Running command #%d: %s %s\n",c,argv[0],argv[1]);
+        if(c!=-1){
+            if(argv[1]!=NULL)
+                printf("@@ Running command #%d: %s %s\n",c,argv[0],argv[1]);
+            else
+                printf("@@ Running command #%d: %s\n",c,argv[0]);
+        }
         if( execvp(argv[0],argv)==-1){
             perror("execv");
             exit(EXIT_FAILURE);
         }
-        exit(1); 
+        exit(EXIT_FAILURE); 
     }else if(PID<0){
         perror("fork");
         exit(EXIT_FAILURE);
@@ -99,12 +104,17 @@ void ejecuta_fichero(char* file){
     char **cmd_argv;
     pid_t pidcmd;
     int cmd_argc;
+    int status;
     int c=0;
     while(fgets(comando,256,f)!=NULL){
         cmd_argv=parse_command(comando,&cmd_argc);
         pidcmd = launch_command(cmd_argv,c);
-        waitpid(pidcmd,NULL,0);
-        printf("PID Hijo: %d\n",pidcmd);
+        waitpid(pidcmd,&status,0);
+        if (WIFEXITED(status)) {
+            printf("@@ Command #%d terminated (pid: %d, status: %d)\n",c, pidcmd, WEXITSTATUS(status));
+        } else {
+            printf("@@ Command #%d terminated (pid: %d) with unknown status\n",c, pidcmd);
+        }
         c++;
     }
     fclose(f);
@@ -165,7 +175,6 @@ int main(int argc, char *argv[]) {
     char **cmd_argv;
     int cmd_argc;
     int i;
-    pid_t pidcmd;
     int  opt;
 	struct options options;
     options.action=NONE_ACT;
@@ -196,10 +205,10 @@ int main(int argc, char *argv[]) {
     {
         case X_CMD_ACT:
         cmd_argv=parse_command(options.cmds,&cmd_argc);
-        pidcmd = launch_command(cmd_argv,0);
-        printf("PID hijo: %d\n",pidcmd);
+        launch_command(cmd_argv,-1);
+        wait(NULL);
         for (i = 0; cmd_argv[i] != NULL; i++) {  
-        free(cmd_argv[i]);  // Free individual argument
+            free(cmd_argv[i]);  // Free individual argument
         }
         free(cmd_argv); 
         break;
