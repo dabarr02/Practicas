@@ -50,14 +50,17 @@ int get_size_dir(char *dname, size_t *blocks)
 		if(strcmp(info_dir->d_name, ".") == 0 || strcmp(info_dir->d_name, "..") == 0){ //evitamo recursion infinita, no podemos meternos en los directorios padre (..) o propio (.)
 			continue;
 		}
-		if(info_dir->d_type == DT_DIR){ //Si la entrada en Dir hacemo recursion
+		char path[1024]; //creamos la nueva ruta para el siguiente ficher o directorio
+        snprintf(path, sizeof(path), "%s/%s", dname, info_dir->d_name);
+		if(info_dir->d_type == DT_DIR){ //Si la entrada en Dir hacemos recursion
 
-			get_size_dir(dname,blocks);
+			get_size_dir(path,blocks);
 
 		}else if(info_dir->d_type == DT_REG){// Si la entrada es Regular, llamamos a get_size
-			get_size(info_dir->d_name,blocks);
+			get_size(path,blocks);
 		}
 	}
+	closedir(directorio);
 	return 0;
 }
 
